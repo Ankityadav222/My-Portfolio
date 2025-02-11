@@ -1,9 +1,107 @@
-import React from 'react'
+import React, { Suspense, useEffect, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Preload, useGLTF, Html, useProgress, Text } from "@react-three/drei";
 
-const Computers = () => {
+// Loader Component with progress
+const Loader = () => {
+  const { progress } = useProgress(); // Track progress
+  
   return (
-    <div>Computers</div>
-  )
-}
+    <Html center>
+      <div style={{ textAlign: "center" }}>
+        <Text fontSize={0.5} color="#f1f1f1" fontWeight={800}>
+          Loading...
+        </Text>
+        <p
+          style={{
+            fontSize: 14,
+            color: '#f1f1f1',
+            fontWeight: 800,
+            marginTop: 40,
+          }}
+        >
+          {progress.toFixed(2)}%
+        </p>
+      </div>
+    </Html>
+  );
+};
 
-export default Computers
+// Computers Model Component
+const Computers = ({ isMobile }) => {
+  const { scene } = useGLTF("/desktop_pc/scene.gltf"); // Ensure path is correct
+
+  return (
+    <mesh>
+      {/* Lighting */}
+      <hemisphereLight intensity={0.35} groundColor="gray" />
+      <spotLight
+        position={[-20, 50, 10]}
+        angle={0.3}
+        penumbra={1}
+        intensity={2}
+        castShadow
+        shadow-mapSize={2048}
+      />
+      <directionalLight
+        position={[10, 20, 10]}
+        intensity={1.5}
+        castShadow
+        shadow-mapSize={2048}
+      />
+      <pointLight position={[0, 10, 0]} intensity={1.5} />
+
+      {/* 3D Model */}
+      <primitive
+        object={scene}
+        scale={isMobile ? 0.7 : 0.75}
+        position={isMobile ? [0, -3, -2.2] : [0, -3.25, -1.5]}
+        rotation={[-0.01, -0.2, -0.1]}
+      />
+    </mesh>
+  );
+};
+
+// Main Canvas Component
+const ComputersCanvas = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 500px)");
+
+    setIsMobile(mediaQuery.matches);
+
+    const handleMediaQueryChange = (event) => {
+      setIsMobile(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleMediaQueryChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaQueryChange);
+    };
+  }, []);
+
+  return (
+    <Canvas
+      frameloop="demand"
+      shadows
+      dpr={[1, 2]}
+      camera={{ position: [30, 3, 5], fov: 25 }}
+      gl={{ preserveDrawingBuffer: true }}
+    >
+      <Suspense fallback={<Loader />}>
+        <OrbitControls
+          enableZoom={false}
+          maxPolarAngle={Math.PI / 2}
+          minPolarAngle={Math.PI / 2}
+        />
+        <Computers isMobile={isMobile} />
+      </Suspense>
+
+      <Preload all />
+    </Canvas>
+  );
+};
+
+export default ComputersCanvas;
