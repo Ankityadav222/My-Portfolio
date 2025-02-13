@@ -18,21 +18,31 @@ const Loader = () => {
 
 // Computers Model Component
 const Computers = ({ isMobile }) => {
-  const { scene } = useGLTF("/desktop_pc/scene.gltf"); // Ensure path is correct
+  const { scene } = useGLTF("/desktop_pc/scene.gltf");
 
   return (
     <mesh>
-      {/* Lighting */}
+      {/* Optimized lighting for mobile */}
       <hemisphereLight intensity={0.3} groundColor="gray" />
-      <spotLight position={[-20, 50, 10]} angle={0.3} penumbra={1} intensity={1.8} castShadow />
-      <directionalLight position={[10, 20, 10]} intensity={1.2} castShadow />
-      <pointLight position={[0, 10, 0]} intensity={1.2} />
+      <spotLight 
+        position={[-20, 50, 10]} 
+        angle={0.3} 
+        penumbra={1} 
+        intensity={isMobile ? 1 : 1.8} 
+        castShadow={!isMobile}
+      />
+      <directionalLight 
+        position={[10, 20, 10]} 
+        intensity={isMobile ? 0.8 : 1.2} 
+        castShadow={!isMobile}
+      />
+      {!isMobile && <pointLight position={[0, 10, 0]} intensity={1.2} />}
 
       {/* 3D Model */}
       <primitive
         object={scene}
-        scale={isMobile ? 0.6 : 0.65} // Slightly increased for mobile
-        position={isMobile ? [0, -2.5, -1.5] : [0, -3.5, -1.7]} // Adjusted for better visibility
+        scale={isMobile ? 0.7 : 0.65}
+        position={isMobile ? [0, -2, -1.5] : [0, -3.5, -1.7]}
         rotation={[-0.01, -0.2, -0.1]}
       />
     </mesh>
@@ -44,22 +54,42 @@ const ComputersCanvas = () => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const updateSize = () => setIsMobile(window.innerWidth <= 600);
-    updateSize(); // Check on mount
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    const mediaQuery = window.matchMedia("(max-width: 600px)");
+    setIsMobile(mediaQuery.matches);
+    
+    const handleMediaQueryChange = (event) => {
+      setIsMobile(event.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleMediaQueryChange);
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaQueryChange);
+    };
   }, []);
 
   return (
     <Canvas
       frameloop="demand"
-      shadows
-      dpr={[1, 1.5]}
-      camera={{ position: [10, 3, 5], fov: isMobile ? 35 : 30 }} // Adjusted FOV for mobile
-      gl={{ antialias: true, preserveDrawingBuffer: true }}
+      shadows={!isMobile}
+      dpr={isMobile ? [1, 1] : [1, 1.5]}
+      camera={{
+        position: isMobile ? [5, 3, 5] : [10, 3, 5],
+        fov: isMobile ? 38 : 30,
+        near: 0.1,
+        far: 1000
+      }}
+      gl={{ 
+        antialias: !isMobile,
+        powerPreference: "high-performance"
+      }}
     >
       <Suspense fallback={<Loader />}>
-        <OrbitControls enableZoom={false} maxPolarAngle={Math.PI / 2} minPolarAngle={Math.PI / 2} />
+        <OrbitControls 
+          enableZoom={false} 
+          enablePan={!isMobile}
+          autoRotate={!isMobile}
+          autoRotateSpeed={8}
+        />
         <Computers isMobile={isMobile} />
       </Suspense>
 
