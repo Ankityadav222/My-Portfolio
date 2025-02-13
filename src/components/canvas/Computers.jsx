@@ -1,26 +1,16 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Preload, useGLTF, Html, useProgress, Text } from "@react-three/drei";
+import { OrbitControls, Preload, useGLTF, Html, useProgress } from "@react-three/drei";
 
 // Loader Component with progress
 const Loader = () => {
-  const { progress } = useProgress(); // Track progress
-  
+  const { progress } = useProgress();
+
   return (
     <Html center>
       <div style={{ textAlign: "center" }}>
-        <Text fontSize={0.5} color="#f1f1f1" fontWeight={800}>
-          Loading...
-        </Text>
-        <p
-          style={{
-            fontSize: 14,
-            color: '#f1f1f1',
-            fontWeight: 800,
-            marginTop: 40,
-          }}
-        >
-          {progress.toFixed(2)}%
+        <p style={{ fontSize: 14, color: "#f1f1f1", fontWeight: 800 }}>
+          Loading... {progress.toFixed(2)}%
         </p>
       </div>
     </Html>
@@ -34,28 +24,16 @@ const Computers = ({ isMobile }) => {
   return (
     <mesh>
       {/* Lighting */}
-      <hemisphereLight intensity={0.35} groundColor="gray" />
-      <spotLight
-        position={[-20, 50, 10]}
-        angle={0.3}
-        penumbra={1}
-        intensity={2}
-        castShadow
-        shadow-mapSize={2048}
-      />
-      <directionalLight
-        position={[10, 20, 10]}
-        intensity={1.5}
-        castShadow
-        shadow-mapSize={2048}
-      />
-      <pointLight position={[0, 10, 0]} intensity={1.5} />
+      <hemisphereLight intensity={0.3} groundColor="gray" />
+      <spotLight position={[-20, 50, 10]} angle={0.3} penumbra={1} intensity={1.8} castShadow />
+      <directionalLight position={[10, 20, 10]} intensity={1.2} castShadow />
+      <pointLight position={[0, 10, 0]} intensity={1.2} />
 
       {/* 3D Model */}
       <primitive
         object={scene}
-        scale={isMobile ? 0.7 : 0.75}
-        position={isMobile ? [0, -3, -2.2] : [0, -3.25, -1.5]}
+        scale={isMobile ? 0.5 : 0.65} // Reduced scale for both mobile & desktop
+        position={isMobile ? [0, -2.8, -2] : [0, -3.5, -1.7]} // Adjusted position
         rotation={[-0.01, -0.2, -0.1]}
       />
     </mesh>
@@ -64,38 +42,30 @@ const Computers = ({ isMobile }) => {
 
 // Main Canvas Component
 const ComputersCanvas = () => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 500px)");
+    const updateSize = () => setIsMobile(window.innerWidth <= 600);
 
-    setIsMobile(mediaQuery.matches);
-
-    const handleMediaQueryChange = (event) => {
-      setIsMobile(event.matches);
-    };
-
-    mediaQuery.addEventListener("change", handleMediaQueryChange);
-
-    return () => {
-      mediaQuery.removeEventListener("change", handleMediaQueryChange);
-    };
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
   }, []);
+
+  // Check WebGL support
+  if (!window.WebGLRenderingContext) {
+    return <p style={{ color: "#fff", textAlign: "center" }}>Your browser does not support WebGL.</p>;
+  }
 
   return (
     <Canvas
       frameloop="demand"
       shadows
-      dpr={[1, 2]}
-      camera={{ position: [30, 3, 5], fov: 25 }}
-      gl={{ preserveDrawingBuffer: true }}
+      dpr={[1, 1.5]}
+      camera={{ position: [10, 3, 5], fov: 30 }}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
     >
       <Suspense fallback={<Loader />}>
-        <OrbitControls
-          enableZoom={false}
-          maxPolarAngle={Math.PI / 2}
-          minPolarAngle={Math.PI / 2}
-        />
+        <OrbitControls enableZoom={false} maxPolarAngle={Math.PI / 2} minPolarAngle={Math.PI / 2} />
         <Computers isMobile={isMobile} />
       </Suspense>
 
