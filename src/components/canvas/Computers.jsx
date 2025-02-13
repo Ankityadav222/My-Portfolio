@@ -3,9 +3,8 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Preload, useGLTF, Html, useProgress } from "@react-three/drei";
 
 // Loader Component with progress
-const Loader = () => {
+const Loader = () => {  
   const { progress } = useProgress();
-
   return (
     <Html center>
       <div style={{ textAlign: "center" }}>
@@ -32,8 +31,8 @@ const Computers = ({ isMobile }) => {
       {/* 3D Model */}
       <primitive
         object={scene}
-        scale={isMobile ? 0.5 : 0.65} // Reduced scale for both mobile & desktop
-        position={isMobile ? [0, -2.8, -2] : [0, -3.5, -1.7]} // Adjusted position
+        scale={isMobile ? 0.6 : 0.65} // Slightly increased for mobile
+        position={isMobile ? [0, -2.5, -1.5] : [0, -3.5, -1.7]} // Adjusted for better visibility
         rotation={[-0.01, -0.2, -0.1]}
       />
     </mesh>
@@ -42,26 +41,21 @@ const Computers = ({ isMobile }) => {
 
 // Main Canvas Component
 const ComputersCanvas = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const updateSize = () => setIsMobile(window.innerWidth <= 600);
-
+    updateSize(); // Check on mount
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, []);
-
-  // Check WebGL support
-  if (!window.WebGLRenderingContext) {
-    return <p style={{ color: "#fff", textAlign: "center" }}>Your browser does not support WebGL.</p>;
-  }
 
   return (
     <Canvas
       frameloop="demand"
       shadows
       dpr={[1, 1.5]}
-      camera={{ position: [10, 3, 5], fov: 30 }}
+      camera={{ position: [10, 3, 5], fov: isMobile ? 35 : 30 }} // Adjusted FOV for mobile
       gl={{ antialias: true, preserveDrawingBuffer: true }}
     >
       <Suspense fallback={<Loader />}>
